@@ -1,3 +1,30 @@
 <resources>
     <string name="app_name">Tikitaka</string>
+
+    <string name="action_create_post">Crear publicación</string>
+    <string name="action_search">Buscar</string>
+    <string name="action_like">Me Gusta</string>
+    <string name="action_favorite">Favorito</string>
+    <string name="action_save">Guardar</string>
+    <string name="action_publish">Publicar</string>
+    <string name="action_go_to_profile">Ir a Perfil</string>
+    <string name="action_edit_profile">Editar Perfil</string>
+    <string name="label_add_image">Agrega una imagen</string>
+    <string name="label_title">Título</string>
+    <string name="label_description">Descripción...</string>
+    <string name="label_order">Orden</string>
+
+    <string name="nav_home">Inicio</string>
+    <string name="nav_favorites">Favoritos</string>
+    <string name="nav_profile">Perfil</string>
+
+    <string name="username_placeholder">Usuario</string>
+    <string name="lorem_ipsum_content">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud ...</string>
+
+    <string-array name="order_options">
+        <item>Nombre de usuario</item>
+        <item>Fecha (Más reciente)</item>
+        <item>Fecha (Más antiguo)</item>
+        <item>Más Me Gusta</item>
+    </string-array>
 </resources>
