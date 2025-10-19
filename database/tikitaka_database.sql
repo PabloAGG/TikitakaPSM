@@ -1,15 +1,8 @@
--- =====================================================
--- TIKITAKA PSM - BASE DE DATOS
--- Script SQL para crear la estructura completa
--- =====================================================
-
--- Crear base de datos
 CREATE DATABASE tikitaka_db;
 USE tikitaka_db;
 
--- =====================================================
 -- TABLA: SELECCIONES DE FÚTBOL
--- =====================================================
+
 CREATE TABLE football_teams (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL UNIQUE,
@@ -64,9 +57,9 @@ INSERT INTO football_teams (name, confederation, flag_url) VALUES
 ('Senegal', 'CAF', 'https://flagcdn.com/sn.svg'),
 ('Camerún', 'CAF', 'https://flagcdn.com/cm.svg');
 
--- =====================================================
+
 -- TABLA: USUARIOS
--- =====================================================
+
 CREATE TABLE users (
     id INT PRIMARY KEY AUTO_INCREMENT,
     first_name VARCHAR(100) NOT NULL,
@@ -86,9 +79,7 @@ CREATE TABLE users (
     INDEX idx_favorite_team (favorite_team_id)
 );
 
--- =====================================================
 -- TABLA: PUBLICACIONES
--- =====================================================
 CREATE TABLE posts (
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
@@ -111,9 +102,7 @@ CREATE TABLE posts (
     INDEX idx_is_active (is_active)
 );
 
--- =====================================================
 -- TABLA: LIKES DE PUBLICACIONES
--- =====================================================
 CREATE TABLE post_likes (
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
@@ -127,9 +116,7 @@ CREATE TABLE post_likes (
     INDEX idx_post_id (post_id)
 );
 
--- =====================================================
 -- TABLA: FAVORITOS DE USUARIOS
--- =====================================================
 CREATE TABLE user_favorites (
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
@@ -143,9 +130,7 @@ CREATE TABLE user_favorites (
     INDEX idx_post_id (post_id)
 );
 
--- =====================================================
 -- TABLA: SESIONES DE USUARIO (para autenticación)
--- =====================================================
 CREATE TABLE user_sessions (
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
@@ -161,9 +146,7 @@ CREATE TABLE user_sessions (
     INDEX idx_expires_at (expires_at)
 );
 
--- =====================================================
--- TRIGGERS PARA AUTOMATIZAR CONTADORES
--- =====================================================
+-- TRIGGERS 
 
 -- Trigger para incrementar likes_count cuando se agrega un like
 DELIMITER //
@@ -187,10 +170,7 @@ BEGIN
 END//
 DELIMITER ;
 
--- =====================================================
--- VISTAS ÚTILES
--- =====================================================
-
+-- VISTAS 
 -- Vista para obtener posts completos con información del usuario y equipo
 CREATE VIEW posts_complete AS
 SELECT 
@@ -230,39 +210,7 @@ LEFT JOIN football_teams ft ON u.favorite_team_id = ft.id
 WHERE u.is_active = TRUE
 GROUP BY u.id;
 
--- =====================================================
--- DATOS DE PRUEBA
--- =====================================================
-
--- Insertar usuarios de prueba
-INSERT INTO users (first_name, last_name, email, phone, password_hash, favorite_team_id) VALUES
-('Pablo', 'García', 'pablo@tikitaka.com', '8199191919', '$2b$10$example_hash_1', 1), -- Argentina
-('María', 'López', 'maria@tikitaka.com', '8199191920', '$2b$10$example_hash_2', 2), -- Brasil
-('Carlos', 'Rodríguez', 'carlos@tikitaka.com', '8199191921', '$2b$10$example_hash_3', 20), -- México
-('Ana', 'Martínez', 'ana@tikitaka.com', '8199191922', '$2b$10$example_hash_4', 11); -- España
-
--- Insertar publicaciones de prueba
-INSERT INTO posts (user_id, title, content, team_id, is_draft) VALUES
-(1, 'Victoria de Argentina', 'Increíble partido de la Albiceleste! Messi estuvo espectacular.', 1, FALSE),
-(2, 'Brasil en cuartos', 'La Canarinha sigue avanzando con buen fútbol.', 2, FALSE),
-(3, 'El Tri se prepara', 'México se alista para el próximo mundial.', 20, FALSE),
-(1, 'Borrador sobre táctica', 'Análisis táctico pendiente de completar...', 1, TRUE),
-(4, 'La Roja Española', 'España vuelve a brillar con su toque característico.', 11, FALSE);
-
--- Insertar algunos likes y favoritos de prueba
-INSERT INTO post_likes (user_id, post_id) VALUES
-(2, 1), (3, 1), (4, 1), -- 3 likes para el post de Argentina
-(1, 2), (3, 2), -- 2 likes para el post de Brasil
-(1, 5), (2, 5); -- 2 likes para el post de España
-
-INSERT INTO user_favorites (user_id, post_id) VALUES
-(2, 1), -- María marca como favorito el post de Argentina
-(1, 2), -- Pablo marca como favorito el post de Brasil
-(3, 5); -- Carlos marca como favorito el post de España
-
--- =====================================================
--- PROCEDIMIENTOS ALMACENADOS ÚTILES
--- =====================================================
+-- PROCEDIMIENTOS ALMACENADOS 
 
 -- Procedimiento para obtener feed personalizado por selección favorita
 DELIMITER //
@@ -290,14 +238,7 @@ BEGIN
 END //
 DELIMITER ;
 
--- =====================================================
--- ÍNDICES ADICIONALES PARA OPTIMIZACIÓN
--- =====================================================
+-- ÍNDICES
 CREATE INDEX idx_posts_team_created ON posts(team_id, created_at DESC);
 CREATE INDEX idx_posts_user_draft ON posts(user_id, is_draft, created_at DESC);
 CREATE INDEX idx_users_team_active ON users(favorite_team_id, is_active);
-
--- =====================================================
--- SCRIPT COMPLETADO
--- Base de datos lista para Tikitaka PSM
--- =====================================================
