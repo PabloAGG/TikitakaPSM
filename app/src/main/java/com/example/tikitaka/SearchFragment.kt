@@ -9,6 +9,7 @@ import android.widget.Spinner
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.tikitaka.models.Post
 
 class SearchFragment : Fragment() {
 
@@ -45,7 +46,11 @@ class SearchFragment : Fragment() {
         // Mock data for search results (initially empty)
         val mockSearchResults = listOf<Post>()
         
-        val adapter = PostsAdapter(mockSearchResults)
+        val adapter = PostsAdapter(mockSearchResults.toMutableList(), { post, position ->
+            // Handle like click
+        }, { post, position ->
+            // Handle favorite click
+        })
         recyclerView.adapter = adapter
     }
 }

@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.tikitaka.models.Post
 
 class FavoritesFragment : Fragment() {
 
@@ -32,11 +33,35 @@ class FavoritesFragment : Fragment() {
         
         // Mock data for favorites
         val mockFavorites = listOf(
-            Post(1, "Usuario1", "18/10/2025", getString(R.string.lorem_ipsum_content), isFavorite = true),
-            Post(4, "Usuario4", "15/10/2025", "Esta es una publicación favorita.", isFavorite = true)
+            Post(
+                id = 1,
+                content = getString(R.string.lorem_ipsum_content),
+                teamId = 1,
+                userId = 1,
+                username = "Usuario1",
+                fullName = "Usuario Uno",
+                teamName = "Argentina",
+                isFavorited = true,
+                createdAt = "2025-10-18T00:00:00Z"
+            ),
+            Post(
+                id = 4,
+                content = "Esta es una publicación favorita.",
+                teamId = 2,
+                userId = 4,
+                username = "Usuario4",
+                fullName = "Usuario Cuatro",
+                teamName = "Brasil",
+                isFavorited = true,
+                createdAt = "2025-10-15T00:00:00Z"
+            )
         )
         
-        val adapter = PostsAdapter(mockFavorites)
+        val adapter = PostsAdapter(mockFavorites.toMutableList(), { post, position ->
+            // Handle like click
+        }, { post, position ->
+            // Handle favorite click
+        })
         recyclerView.adapter = adapter
     }
 }

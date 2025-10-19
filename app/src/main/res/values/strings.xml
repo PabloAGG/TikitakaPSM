@@ -21,10 +21,82 @@
     <string name="username_placeholder">Usuario</string>
     <string name="lorem_ipsum_content">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud ...</string>
 
+    <!-- Login & Register -->
+    <string name="login_title">Inicia sesión</string>
+    <string name="register_title">Crea tu cuenta!</string>
+    <string name="email_hint">Correo</string>
+    <string name="password_hint">Contraseña</string>
+    <string name="confirm_password_hint">Confirma tu contraseña</string>
+    <string name="name_hint">Nombre(s)</string>
+    <string name="lastname_hint">Apellido(s)</string>
+    <string name="phone_hint">Tel. de contacto</string>
+    <string name="login_button">Iniciar sesión</string>
+    <string name="register_button">Crear</string>
+    <string name="no_account">Aun no tienes cuenta?</string>
+    <string name="register_link">Regístrate!</string>
+    <string name="have_account">¿Ya tienes cuenta?</string>
+    <string name="login_link">Inicia sesión</string>
+
+    <!-- Profile -->
+    <string name="my_data_title">Mis Datos</string>
+    <string name="modify_data_title">Modifica tus datos</string>
+    <string name="save_changes">Guardar</string>
+    <string name="change_password">Cambiar contraseña</string>
+    <string name="logout">Cerrar Sesión</string>
+    <string name="drafts">Borradores</string>
+    <string name="my_posts_title">Mis Borradores</string>
+    <string name="favorite_team">Selección favorita</string>
+    <string name="select_team">Selecciona tu selección favorita</string>
+
+    <!-- Post creation -->
+    <string name="modify_post_title">Modificar una publicacion</string>
+    <string name="add_image">Agrega una imagen</string>
+    <string name="save_draft">Guardar</string>
+    <string name="delete_post">eliminar</string>
+    <string name="post_team">Selección</string>
+
     <string-array name="order_options">
         <item>Nombre de usuario</item>
         <item>Fecha (Más reciente)</item>
         <item>Fecha (Más antiguo)</item>
         <item>Más Me Gusta</item>
+    </string-array>
+
+    <string-array name="football_teams">
+        <item>Todas las selecciones</item>
+        <item>Argentina</item>
+        <item>Brasil</item>
+        <item>México</item>
+        <item>España</item>
+        <item>Francia</item>
+        <item>Alemania</item>
+        <item>Italia</item>
+        <item>Inglaterra</item>
+        <item>Portugal</item>
+        <item>Países Bajos</item>
+        <item>Bélgica</item>
+        <item>Croacia</item>
+        <item>Uruguay</item>
+        <item>Colombia</item>
+        <item>Chile</item>
+        <item>Perú</item>
+        <item>Ecuador</item>
+        <item>Venezuela</item>
+        <item>Bolivia</item>
+        <item>Paraguay</item>
+        <item>Estados Unidos</item>
+        <item>Canadá</item>
+        <item>Costa Rica</item>
+        <item>Japón</item>
+        <item>Corea del Sur</item>
+        <item>Australia</item>
+        <item>Arabia Saudí</item>
+        <item>Marruecos</item>
+        <item>Túnez</item>
+        <item>Egipto</item>
+        <item>Nigeria</item>
+        <item>Ghana</item>
+        <item>Senegal</item>
+        <item>Camerún</item>
     </string-array>
 </resources>
