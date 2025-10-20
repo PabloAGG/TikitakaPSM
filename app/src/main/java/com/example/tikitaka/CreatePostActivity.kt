@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.view.MenuItem
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -13,6 +14,7 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.Spinner
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
@@ -58,6 +60,10 @@ class CreatePostActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_create_post)
+        
+        // Configurar toolbar con botón de regresar
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.title = "Crear publicación"
         
         initViews()
         setupListeners()
@@ -297,5 +303,41 @@ class CreatePostActivity : AppCompatActivity() {
             saveDraftButton.isEnabled = true
             saveButton.text = if (isEditMode) "Actualizar Post" else "Publicar"
         }
+    }
+
+    // Manejar el botón de regresar del toolbar
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                onBackPressed()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    // Verificar si hay cambios antes de salir
+    override fun onBackPressed() {
+        if (hasUnsavedChanges()) {
+            showExitConfirmationDialog()
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+    private fun hasUnsavedChanges(): Boolean {
+        val description = descriptionEditText.text.toString().trim()
+        return description.isNotEmpty() || selectedImageUri != null
+    }
+
+    private fun showExitConfirmationDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("⚠️ Cambios sin guardar")
+            .setMessage("Tienes cambios sin guardar. ¿Estás seguro de que quieres salir?")
+            .setPositiveButton("Salir") { _, _ ->
+                finish()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 }

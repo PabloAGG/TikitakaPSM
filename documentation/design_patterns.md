@@ -1,6 +1,6 @@
 # PATRONES DE DISEÑO - TIKITAKA PSM
 
-## 1. 🏗️ **PATRÓN SINGLETON**
+## 1. **PATRÓN SINGLETON**
 
 ### **Implementación: AuthManager**
 **Propósito**: Gestionar la sesión del usuario de forma única en toda la aplicación.
@@ -73,7 +73,7 @@ val currentUser = AuthManager.getInstance().getCurrentUser()
 
 ---
 
-## 2. 🏭 **PATRÓN FACTORY METHOD**
+## 2.  **PATRÓN FACTORY METHOD**
 
 ### **Implementación: PostAdapterFactory**
 **Propósito**: Crear diferentes tipos de adaptadores según el contexto de visualización.
@@ -147,7 +147,7 @@ recyclerView.adapter = adapter
 
 ---
 
-## 3. 👀 **PATRÓN OBSERVER**
+## 3.  **PATRÓN OBSERVER**
 
 ### **Implementación: PostEventManager**
 **Propósito**: Notificar cambios en posts a múltiples componentes de la aplicación.
@@ -294,4 +294,4 @@ class PostsAdapter(private var posts: List<Post>) : RecyclerView.Adapter<PostsAd
 | **Factory Method** | `PostAdapterFactory` | Creación de adaptadores | Flexibilidad y extensibilidad |
 | **Observer** | `PostEventManager` | Comunicación entre componentes | Sincronización automática |
 
-Estos patrones trabajan juntos para crear una arquitectura robusta, mantenible y escalable para la aplicación Tikitaka PSM.
+Estos patrones trabajan juntos para crear una arquitectura robusta, mantenible y escalable para la aplicación.
