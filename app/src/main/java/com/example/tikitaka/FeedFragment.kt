@@ -16,8 +16,11 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.tikitaka.api.ApiClient
 import com.example.tikitaka.models.Post
+import com.example.tikitaka.repository.PostRepository
+import com.example.tikitaka.utils.NetworkUtils
 import com.example.tikitaka.utils.Utils
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
 
 class FeedFragment : Fragment() {
@@ -30,6 +33,8 @@ class FeedFragment : Fragment() {
     private lateinit var emptyStateText: TextView
     
     private lateinit var postsAdapter: PostsAdapter
+    private lateinit var postRepository: PostRepository
+    
     private var currentPage = 1
     private var isLoading = false
     private var hasMorePosts = true
@@ -45,6 +50,8 @@ class FeedFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
+        postRepository = PostRepository.getInstance(requireContext())
+        
         initViews(view)
         setupRecyclerView()
         setupSwipeRefresh()
@@ -52,6 +59,7 @@ class FeedFragment : Fragment() {
         setupSearchButton()
         
         loadPosts(refresh = true)
+        showOfflineIndicatorIfNeeded()
     }
 
     private fun initViews(view: View) {
@@ -70,6 +78,7 @@ class FeedFragment : Fragment() {
             posts = mutableListOf(),
             onLikeClick = { post, position -> handleLikeClick(post, position) },
             onFavoriteClick = { post, position -> handleFavoriteClick(post, position) },
+            onCommentClick = { post -> openComments(post) },
             onUserClick = { userId -> navigateToUserProfile(userId) }
         )
         
@@ -131,15 +140,14 @@ class FeedFragment : Fragment() {
         
         lifecycleScope.launch {
             try {
-                val response = ApiClient.apiService.getPosts(
+                // Usar el repositorio con estrategia cache-first
+                val result = postRepository.getPosts(
                     page = currentPage,
-                    limit = 10
+                    limit = 10,
+                    forceRefresh = refresh
                 )
                 
-                if (response.isSuccessful && response.body()?.success == true) {
-                    val postsResponse = response.body()!!
-                    val newPosts = postsResponse.posts
-                    
+                result.onSuccess { newPosts ->
                     if (refresh) {
                         postsAdapter.updatePosts(newPosts)
                         recyclerView.scrollToPosition(0)
@@ -147,8 +155,8 @@ class FeedFragment : Fragment() {
                         postsAdapter.addPosts(newPosts)
                     }
                     
-                    // Verificar si hay más posts
-                    hasMorePosts = postsResponse.pagination?.hasMore ?: false
+                    // Si tenemos menos de 10 posts, probablemente no hay más
+                    hasMorePosts = newPosts.size >= 10
                     if (hasMorePosts) {
                         currentPage++
                     }
@@ -160,9 +168,16 @@ class FeedFragment : Fragment() {
                         hideEmptyState()
                     }
                     
-                } else {
+                    // Mostrar indicador si estamos offline
+                    showOfflineIndicatorIfNeeded()
+                    
+                }.onFailure { exception ->
                     context?.let { 
-                        Utils.showToast(it, "Error cargando posts", true) 
+                        if (!NetworkUtils.isNetworkAvailable(it)) {
+                            Utils.showToast(it, "Sin conexión - mostrando caché", true)
+                        } else {
+                            Utils.showToast(it, "Error: ${exception.message}", true)
+                        }
                     }
                     if (refresh && postsAdapter.itemCount == 0) {
                         showEmptyState()
@@ -171,7 +186,7 @@ class FeedFragment : Fragment() {
                 
             } catch (e: Exception) {
                 context?.let { 
-                    Utils.showToast(it, "Error de conexión", true) 
+                    Utils.showToast(it, "Error: ${e.message}", true) 
                 }
                 if (refresh && postsAdapter.itemCount == 0) {
                     showEmptyState()
@@ -186,69 +201,74 @@ class FeedFragment : Fragment() {
 
     private fun handleLikeClick(post: Post, position: Int) {
         lifecycleScope.launch {
-            try {
-                val response = ApiClient.apiService.toggleLike(post.id)
+            // Usar repositorio con actualización optimista
+            val result = postRepository.toggleLike(post.id, post.isLiked)
+            
+            result.onSuccess { newLikeState ->
+                val updatedPost = post.copy(
+                    isLiked = newLikeState,
+                    likesCount = if (newLikeState) post.likesCount + 1 else post.likesCount - 1
+                )
+                postsAdapter.updatePost(position, updatedPost)
                 
-                if (response.isSuccessful && response.body()?.success == true) {
-                    val likeResponse = response.body()!!.data
-                    
-                    // Crear post actualizado
-                    val updatedPost = post.copy(
-                        isLiked = likeResponse?.isLiked ?: !post.isLiked,
-                        likesCount = likeResponse?.likesCount ?: post.likesCount
-                    )
-                    
-                    postsAdapter.updatePost(position, updatedPost)
-                } else {
-                    context?.let { 
-                        Utils.showToast(it, "Error al procesar like") 
-                    }
+                // Mostrar mensaje si estamos offline
+                if (!NetworkUtils.isNetworkAvailable(requireContext())) {
+                    Utils.showToast(requireContext(), "Like guardado localmente")
                 }
-            } catch (e: Exception) {
-                context?.let { 
-                    Utils.showToast(it, "Error de conexión") 
-                }
+            }.onFailure { exception ->
+                Utils.showToast(requireContext(), "Error: ${exception.message}")
             }
         }
     }
 
     private fun handleFavoriteClick(post: Post, position: Int) {
         lifecycleScope.launch {
-            try {
-                val response = ApiClient.apiService.toggleFavorite(post.id)
+            // Usar repositorio con actualización optimista
+            val result = postRepository.toggleFavorite(post.id, post.isFavorited)
+            
+            result.onSuccess { newFavoriteState ->
+                val updatedPost = post.copy(
+                    isFavorited = newFavoriteState
+                )
+                postsAdapter.updatePost(position, updatedPost)
                 
-                if (response.isSuccessful && response.body()?.success == true) {
-                    val favoriteResponse = response.body()!!.data
-                    
-                    // Crear post actualizado
-                    val updatedPost = post.copy(
-                        isFavorited = favoriteResponse?.isFavorited ?: !post.isFavorited
-                    )
-                    
-                    postsAdapter.updatePost(position, updatedPost)
-                    
-                    context?.let { 
-                        val message = if (updatedPost.isFavorited) "Post guardado" else "Post removido de favoritos"
-                        Utils.showToast(it, message)
-                    }
-                } else {
-                    context?.let { 
-                        Utils.showToast(it, "Error al procesar favorito") 
-                    }
+                val message = if (newFavoriteState) "Post guardado" else "Post removido de favoritos"
+                Utils.showToast(requireContext(), message)
+                
+                // Mostrar mensaje si estamos offline
+                if (!NetworkUtils.isNetworkAvailable(requireContext())) {
+                    Utils.showToast(requireContext(), "Cambio guardado localmente")
                 }
-            } catch (e: Exception) {
-                context?.let { 
-                    Utils.showToast(it, "Error de conexión") 
-                }
+            }.onFailure { exception ->
+                Utils.showToast(requireContext(), "Error: ${exception.message}")
             }
         }
     }
 
     private fun navigateToUserProfile(userId: Int) {
-        // TODO: Implementar navegación al perfil del usuario
-        context?.let { 
-            Utils.showToast(it, "Ver perfil de usuario #$userId") 
+        // Navegar al fragmento de perfil con el userId
+        val bundle = Bundle().apply {
+            putInt("user_id", userId)
         }
+        
+        try {
+            findNavController().navigate(R.id.nav_profile, bundle)
+        } catch (e: Exception) {
+            // Si falla la navegación, mostrar mensaje
+            context?.let { 
+                Utils.showToast(it, "Abriendo perfil...") 
+            }
+        }
+    }
+    
+    private fun openComments(post: Post) {
+        val intent = Intent(requireContext(), CommentsActivity::class.java).apply {
+            putExtra("POST_ID", post.id)
+            putExtra("POST_USER_NAME", post.fullName.ifEmpty { post.username })
+            putExtra("POST_CONTENT", post.content)
+            putExtra("POST_USER_IMAGE", post.profileImage)
+        }
+        startActivity(intent)
     }
 
     private fun showEmptyState() {
@@ -260,6 +280,16 @@ class FeedFragment : Fragment() {
     private fun hideEmptyState() {
         emptyStateText.visibility = View.GONE
         recyclerView.visibility = View.VISIBLE
+    }
+
+    private fun showOfflineIndicatorIfNeeded() {
+        if (!NetworkUtils.isNetworkAvailable(requireContext())) {
+            view?.let { rootView ->
+                Snackbar.make(rootView, "📱 Modo offline - mostrando contenido guardado", Snackbar.LENGTH_LONG)
+                    .setAction("OK") { }
+                    .show()
+            }
+        }
     }
 
     override fun onResume() {

@@ -137,12 +137,27 @@
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="0dp"
             android:layout_height="36dp"
-            android:layout_marginEnd="4dp"
+            android:layout_marginEnd="2dp"
             android:drawableStart="@drawable/ic_thumb_up"
             android:text="Like"
             android:textSize="12sp"
             android:gravity="center"
             app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/btn_comment"
+            app:layout_constraintTop_toBottomOf="@id/separator" />
+
+        <Button
+            android:id="@+id/btn_comment"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:drawableStart="@drawable/ic_chat"
+            android:text="Comment"
+            android:textSize="12sp"
+            android:gravity="center"
+            app:layout_constraintStart_toEndOf="@id/btn_like"
             app:layout_constraintEnd_toStartOf="@id/btn_favorite"
             app:layout_constraintTop_toBottomOf="@id/separator" />
 
@@ -151,12 +166,12 @@
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="0dp"
             android:layout_height="36dp"
-            android:layout_marginStart="4dp"
+            android:layout_marginStart="2dp"
             android:drawableStart="@drawable/ic_favorite_border"
             android:text="Save"
             android:textSize="12sp"
             android:gravity="center"
-            app:layout_constraintStart_toEndOf="@id/btn_like"
+            app:layout_constraintStart_toEndOf="@id/btn_comment"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/separator" />
 

@@ -32,6 +32,7 @@ class RegisterActivity : AppCompatActivity() {
     
     private lateinit var preferencesManager: PreferencesManager
     private var teams: List<Team> = emptyList()
+    private var teamAdapter: android.widget.ArrayAdapter<String>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,14 +74,38 @@ class RegisterActivity : AppCompatActivity() {
                 val response = ApiClient.apiService.getTeams()
                 if (response.isSuccessful && response.body()?.success == true) {
                     teams = response.body()?.teams ?: emptyList()
-                    // El spinner ya debería estar configurado con el array de strings.xml
-                    // Los equipos se usarán para obtener el ID cuando se registre
+                    
+                    if (teams.isNotEmpty()) {
+                        // Actualizar el spinner dinámicamente con los equipos de la API
+                        updateTeamSpinner()
+                    } else {
+                        android.util.Log.w("RegisterActivity", "Lista de equipos vacía")
+                    }
+                } else {
+                    // Usar equipos por defecto del spinner si falla la carga
+                    android.util.Log.w("RegisterActivity", "No se pudieron cargar equipos desde API")
                 }
             } catch (e: Exception) {
                 // Si no se pueden cargar los equipos, usar los valores por defecto del spinner
-                Utils.showToast(this@RegisterActivity, "Error cargando equipos", false)
+                android.util.Log.e("RegisterActivity", "Error cargando equipos: ${e.message}")
             }
         }
+    }
+    
+    private fun updateTeamSpinner() {
+        // Crear lista de nombres de equipos
+        val teamNames = teams.map { it.name }
+        
+        // Crear y configurar el adapter
+        teamAdapter = android.widget.ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_item,
+            teamNames
+        )
+        teamAdapter?.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        
+        // Asignar el adapter al spinner
+        teamSpinner.adapter = teamAdapter
     }
 
     private fun performRegister() {
@@ -126,13 +151,14 @@ class RegisterActivity : AppCompatActivity() {
                 if (response.isSuccessful && response.body()?.success == true) {
                     val registerResponse = response.body()!!
                     
-                    // Guardar token y datos del usuario
-                    registerResponse.token?.let { token ->
-                        ApiClient.setAuthToken(token)
-                        preferencesManager.saveAuthToken(token)
-                    }
-                    
-                    registerResponse.user?.let { user ->
+                    // Validar que tenemos token y usuario
+                    if (registerResponse.token != null && registerResponse.user != null) {
+                        // Guardar token primero
+                        ApiClient.setAuthToken(registerResponse.token)
+                        preferencesManager.saveAuthToken(registerResponse.token)
+                        
+                        // Guardar datos del usuario
+                        val user = registerResponse.user
                         preferencesManager.saveUserData(
                             userId = user.id,
                             username = user.username,
@@ -142,18 +168,34 @@ class RegisterActivity : AppCompatActivity() {
                             teamName = user.teamName,
                             teamLogo = user.teamLogo
                         )
+                        
+                        Utils.showToast(this@RegisterActivity, "¡Bienvenido a TikiTaka, ${user.fullName}!")
+                        navigateToMain()
+                    } else {
+                        Utils.showToast(this@RegisterActivity, "Error: datos incompletos del servidor", true)
+                        setLoading(false)
                     }
                     
-                    Utils.showToast(this@RegisterActivity, "¡Registro exitoso! Bienvenido a TikiTaka")
-                    navigateToMain()
-                    
                 } else {
-                    val errorMessage = response.body()?.message ?: "Error en el registro"
+                    // Manejar diferentes códigos de error
+                    val errorMessage = when {
+                        response.body()?.message != null -> response.body()!!.message
+                        response.code() == 409 -> "El email o nombre de usuario ya están en uso"
+                        response.code() == 400 -> "Datos inválidos. Verifica los campos."
+                        response.code() >= 500 -> "Error del servidor. Intenta más tarde."
+                        else -> "Error en el registro. Código: ${response.code()}"
+                    }
                     Utils.showToast(this@RegisterActivity, errorMessage, true)
+                    setLoading(false)
                 }
+            } catch (e: java.net.UnknownHostException) {
+                Utils.showToast(this@RegisterActivity, "No se puede conectar al servidor. Verifica tu conexión.", true)
+                setLoading(false)
+            } catch (e: java.net.SocketTimeoutException) {
+                Utils.showToast(this@RegisterActivity, "Tiempo de espera agotado. Intenta de nuevo.", true)
+                setLoading(false)
             } catch (e: Exception) {
-                Utils.showToast(this@RegisterActivity, "Error de conexión. Verifica tu internet.", true)
-            } finally {
+                Utils.showToast(this@RegisterActivity, "Error: ${e.message ?: "Desconocido"}", true)
                 setLoading(false)
             }
         }
@@ -181,8 +223,9 @@ class RegisterActivity : AppCompatActivity() {
             isValid = false
         }
 
-        if (phone.isEmpty()) {
-            phoneInput.error = "El teléfono es requerido"
+        // El teléfono es opcional, pero si se proporciona debe ser válido
+        if (phone.isNotEmpty() && phone.length < 8) {
+            phoneInput.error = "Teléfono debe tener al menos 8 dígitos"
             isValid = false
         }
 
@@ -203,30 +246,40 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun getTeamIdFromSpinner(): Int {
-        val selectedTeamName = teamSpinner.selectedItem.toString()
-        
-        // Si tenemos la lista de equipos de la API, buscar por nombre
+        // Si tenemos la lista de equipos de la API, usar el índice seleccionado
         if (teams.isNotEmpty()) {
-            val team = teams.find { it.name == selectedTeamName }
-            if (team != null) {
-                return team.id
+            val selectedPosition = teamSpinner.selectedItemPosition
+            if (selectedPosition >= 0 && selectedPosition < teams.size) {
+                return teams[selectedPosition].id
             }
         }
         
-        // Fallback: mapear según el índice del spinner (basado en strings.xml)
-        return when (teamSpinner.selectedItemPosition) {
-            0 -> 1  // "Todas las selecciones" -> usar Argentina como default
-            1 -> 1  // Argentina
-            2 -> 2  // Brasil  
-            3 -> 20 // México
-            4 -> 11 // España
-            5 -> 12 // Francia
-            6 -> 13 // Alemania
-            7 -> 14 // Italia
-            8 -> 15 // Inglaterra
-            9 -> 16 // Portugal
-            10 -> 17 // Países Bajos
-            else -> 1 // Default a Argentina
+        // Fallback: Si no hay equipos de la API, mapear según strings.xml
+        val selectedTeamName = teamSpinner.selectedItem?.toString() ?: ""
+        
+        return when {
+            selectedTeamName.contains("Argentina", ignoreCase = true) -> 1
+            selectedTeamName.contains("Brasil", ignoreCase = true) -> 2
+            selectedTeamName.contains("Uruguay", ignoreCase = true) -> 3
+            selectedTeamName.contains("Colombia", ignoreCase = true) -> 4
+            selectedTeamName.contains("Chile", ignoreCase = true) -> 5
+            selectedTeamName.contains("Perú", ignoreCase = true) -> 6
+            selectedTeamName.contains("Ecuador", ignoreCase = true) -> 7
+            selectedTeamName.contains("Venezuela", ignoreCase = true) -> 8
+            selectedTeamName.contains("Bolivia", ignoreCase = true) -> 9
+            selectedTeamName.contains("Paraguay", ignoreCase = true) -> 10
+            selectedTeamName.contains("España", ignoreCase = true) -> 11
+            selectedTeamName.contains("Francia", ignoreCase = true) -> 12
+            selectedTeamName.contains("Alemania", ignoreCase = true) -> 13
+            selectedTeamName.contains("Italia", ignoreCase = true) -> 14
+            selectedTeamName.contains("Inglaterra", ignoreCase = true) -> 15
+            selectedTeamName.contains("Portugal", ignoreCase = true) -> 16
+            selectedTeamName.contains("Países Bajos", ignoreCase = true) || 
+            selectedTeamName.contains("Holanda", ignoreCase = true) -> 17
+            selectedTeamName.contains("Bélgica", ignoreCase = true) -> 18
+            selectedTeamName.contains("Croacia", ignoreCase = true) -> 19
+            selectedTeamName.contains("México", ignoreCase = true) -> 20
+            else -> 1 // Default a Argentina si no se encuentra
         }
     }
 

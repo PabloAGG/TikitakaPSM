@@ -123,6 +123,32 @@ interface ApiService {
         @Query("limit") limit: Int = 10,
         @Query("days") days: Int = 7
     ): Response<TeamsResponse>
+    
+    // ==================== COMENTARIOS ====================
+    @GET("comments/post/{postId}")
+    suspend fun getComments(
+        @Path("postId") postId: Int,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 20
+    ): Response<CommentsResponse>
+    
+    @POST("comments/post/{postId}")
+    suspend fun createComment(
+        @Path("postId") postId: Int,
+        @Body request: CommentRequest
+    ): Response<ApiResponse<Comment>>
+    
+    @PUT("comments/{id}")
+    suspend fun updateComment(
+        @Path("id") commentId: Int,
+        @Body request: CommentRequest
+    ): Response<ApiResponse<Comment>>
+    
+    @DELETE("comments/{id}")
+    suspend fun deleteComment(@Path("id") commentId: Int): Response<ApiResponse<String>>
+    
+    @POST("comments/{id}/like")
+    suspend fun toggleCommentLike(@Path("id") commentId: Int): Response<CommentLikeResponse>
 }
 
 // Respuestas adicionales para likes y favoritos

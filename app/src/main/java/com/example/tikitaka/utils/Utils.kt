@@ -1,7 +1,11 @@
 package com.example.tikitaka.utils
 
 import android.content.Context
+import android.net.Uri
+import android.provider.MediaStore
 import android.widget.Toast
+import java.io.File
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -121,5 +125,24 @@ object Utils {
     // Limpiar y validar texto
     fun cleanText(text: String?): String {
         return text?.trim() ?: ""
+    }
+    
+    // Obtener archivo desde URI
+    fun getFileFromUri(context: Context, uri: Uri): File? {
+        return try {
+            val inputStream = context.contentResolver.openInputStream(uri)
+            val tempFile = File.createTempFile("upload_", ".jpg", context.cacheDir)
+            
+            inputStream?.use { input ->
+                FileOutputStream(tempFile).use { output ->
+                    input.copyTo(output)
+                }
+            }
+            
+            tempFile
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 }

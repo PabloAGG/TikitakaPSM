@@ -40,7 +40,9 @@ class CreatePostActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     
     private var selectedImageUri: Uri? = null
+    private var uploadedImageUrl: String? = null
     private var teams: List<Team> = emptyList()
+    private var teamAdapter: android.widget.ArrayAdapter<String>? = null
     private var isEditMode = false
     private var editingPostId: Int? = null
 
@@ -49,10 +51,14 @@ class CreatePostActivity : AppCompatActivity() {
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             selectedImageUri = result.data?.data
+            uploadedImageUrl = null // Reset para que se suba de nuevo
             selectedImageUri?.let { uri ->
                 Glide.with(this)
                     .load(uri)
+                    .centerCrop()
                     .into(postImageView)
+                    
+                Utils.showToast(this, "Imagen seleccionada")
             }
         }
     }
@@ -107,11 +113,27 @@ class CreatePostActivity : AppCompatActivity() {
                 val response = ApiClient.apiService.getTeams()
                 if (response.isSuccessful && response.body()?.success == true) {
                     teams = response.body()?.teams ?: emptyList()
+                    
+                    if (teams.isNotEmpty()) {
+                        updateTeamSpinner()
+                    }
                 }
             } catch (e: Exception) {
-                // Error loading teams, use default spinner values
+                android.util.Log.e("CreatePostActivity", "Error cargando equipos: ${e.message}")
             }
         }
+    }
+    
+    private fun updateTeamSpinner() {
+        val teamNames = teams.map { it.name }
+        
+        teamAdapter = android.widget.ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_item,
+            teamNames
+        )
+        teamAdapter?.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        teamSpinner.adapter = teamAdapter
     }
 
     private fun checkEditMode() {
@@ -164,11 +186,12 @@ class CreatePostActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                var imageUrl: String? = null
-                
-                // Subir imagen si se seleccionó una
-                selectedImageUri?.let { uri ->
-                    imageUrl = uploadImage(uri)
+                // Subir imagen si se seleccionó una y no se ha subido antes
+                if (selectedImageUri != null && uploadedImageUrl == null) {
+                    uploadedImageUrl = uploadImage(selectedImageUri!!)
+                    if (uploadedImageUrl == null) {
+                        Utils.showToast(this@CreatePostActivity, "Advertencia: No se pudo subir la imagen", true)
+                    }
                 }
 
                 // Crear o actualizar post
@@ -264,29 +287,30 @@ class CreatePostActivity : AppCompatActivity() {
     }
 
     private fun getTeamIdFromSpinner(): Int {
-        val selectedTeamName = teamSpinner.selectedItem.toString()
-        
-        // Si tenemos la lista de equipos de la API, buscar por nombre
+        // Si tenemos la lista de equipos de la API, usar el índice seleccionado
         if (teams.isNotEmpty()) {
-            val team = teams.find { it.name == selectedTeamName }
-            if (team != null) {
-                return team.id
+            val selectedPosition = teamSpinner.selectedItemPosition
+            if (selectedPosition >= 0 && selectedPosition < teams.size) {
+                return teams[selectedPosition].id
             }
         }
         
-        // Fallback: mapear según el índice del spinner
-        return when (teamSpinner.selectedItemPosition) {
-            0 -> 1  // "Todas las selecciones" -> usar Argentina como default
-            1 -> 1  // Argentina
-            2 -> 2  // Brasil  
-            3 -> 20 // México
-            4 -> 11 // España
-            5 -> 12 // Francia
-            6 -> 13 // Alemania
-            7 -> 14 // Italia
-            8 -> 15 // Inglaterra
-            9 -> 16 // Portugal
-            10 -> 17 // Países Bajos
+        // Fallback: mapear por nombre si no hay equipos de la API
+        val selectedTeamName = teamSpinner.selectedItem?.toString() ?: ""
+        
+        return when {
+            selectedTeamName.contains("Argentina", ignoreCase = true) -> 1
+            selectedTeamName.contains("Brasil", ignoreCase = true) -> 2
+            selectedTeamName.contains("Uruguay", ignoreCase = true) -> 3
+            selectedTeamName.contains("Colombia", ignoreCase = true) -> 4
+            selectedTeamName.contains("Chile", ignoreCase = true) -> 5
+            selectedTeamName.contains("México", ignoreCase = true) -> 20
+            selectedTeamName.contains("España", ignoreCase = true) -> 11
+            selectedTeamName.contains("Francia", ignoreCase = true) -> 12
+            selectedTeamName.contains("Alemania", ignoreCase = true) -> 13
+            selectedTeamName.contains("Italia", ignoreCase = true) -> 14
+            selectedTeamName.contains("Inglaterra", ignoreCase = true) -> 15
+            selectedTeamName.contains("Portugal", ignoreCase = true) -> 16
             else -> 1 // Default a Argentina
         }
     }

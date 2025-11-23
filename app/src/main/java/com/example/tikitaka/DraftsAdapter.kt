@@ -12,7 +12,9 @@ import com.example.tikitaka.utils.Utils
 
 class DraftsAdapter(
     private var drafts: MutableList<Post>,
-    private val onEditClick: (Post) -> Unit
+    private val onEditClick: (Post) -> Unit,
+    private val onPublishClick: (Post) -> Unit,
+    private val onDeleteClick: (Post) -> Unit
 ) : RecyclerView.Adapter<DraftsAdapter.DraftViewHolder>() {
 
     class DraftViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -34,12 +36,12 @@ class DraftsAdapter(
     override fun onBindViewHolder(holder: DraftViewHolder, position: Int) {
         val draft = drafts[position]
         
-        holder.userName.text = draft.fullName.ifEmpty { draft.username }
+        holder.userName.text = "Borrador"
         holder.postDate.text = Utils.formatRelativeDate(draft.createdAt)
         holder.postContent.text = draft.content
         
         holder.publishButton.setOnClickListener {
-            // TODO: Implement publish functionality
+            onPublishClick(draft)
         }
         
         holder.editButton.setOnClickListener {

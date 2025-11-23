@@ -81,13 +81,14 @@ class LoginActivity : AppCompatActivity() {
                 if (response.isSuccessful && response.body()?.success == true) {
                     val loginResponse = response.body()!!
                     
-                    // Guardar token y datos del usuario
-                    loginResponse.token?.let { token ->
-                        ApiClient.setAuthToken(token)
-                        preferencesManager.saveAuthToken(token)
-                    }
-                    
-                    loginResponse.user?.let { user ->
+                    // Validar que tenemos token y usuario
+                    if (loginResponse.token != null && loginResponse.user != null) {
+                        // Guardar token primero
+                        ApiClient.setAuthToken(loginResponse.token)
+                        preferencesManager.saveAuthToken(loginResponse.token)
+                        
+                        // Guardar datos del usuario
+                        val user = loginResponse.user
                         preferencesManager.saveUserData(
                             userId = user.id,
                             username = user.username,
@@ -97,18 +98,33 @@ class LoginActivity : AppCompatActivity() {
                             teamName = user.teamName,
                             teamLogo = user.teamLogo
                         )
+                        
+                        Utils.showToast(this@LoginActivity, "¡Bienvenido ${user.fullName}!")
+                        navigateToMain()
+                    } else {
+                        Utils.showToast(this@LoginActivity, "Error: datos incompletos del servidor", true)
+                        setLoading(false)
                     }
                     
-                    Utils.showToast(this@LoginActivity, "¡Bienvenido de nuevo!")
-                    navigateToMain()
-                    
                 } else {
-                    val errorMessage = response.body()?.message ?: "Error en el login"
+                    val errorMessage = when {
+                        response.body()?.message != null -> response.body()!!.message
+                        response.code() == 401 -> "Credenciales incorrectas. Verifica tu email y contraseña."
+                        response.code() == 404 -> "Usuario no encontrado. ¿Ya te registraste?"
+                        response.code() >= 500 -> "Error del servidor. Intenta más tarde."
+                        else -> "Error en el login. Código: ${response.code()}"
+                    }
                     Utils.showToast(this@LoginActivity, errorMessage, true)
+                    setLoading(false)
                 }
+            } catch (e: java.net.UnknownHostException) {
+                Utils.showToast(this@LoginActivity, "No se puede conectar al servidor. Verifica tu conexión.", true)
+                setLoading(false)
+            } catch (e: java.net.SocketTimeoutException) {
+                Utils.showToast(this@LoginActivity, "Tiempo de espera agotado. Intenta de nuevo.", true)
+                setLoading(false)
             } catch (e: Exception) {
-                Utils.showToast(this@LoginActivity, "Error de conexión. Verifica tu internet.", true)
-            } finally {
+                Utils.showToast(this@LoginActivity, "Error: ${e.message ?: "Desconocido"}", true)
                 setLoading(false)
             }
         }

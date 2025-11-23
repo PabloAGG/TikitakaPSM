@@ -59,6 +59,12 @@
             android:exported="false"
             android:parentActivityName=".MainActivity" />
             
+        <activity
+            android:name=".CommentsActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity"
+            android:windowSoftInputMode="adjustResize" />
+            
     </application>
 
 </manifest>

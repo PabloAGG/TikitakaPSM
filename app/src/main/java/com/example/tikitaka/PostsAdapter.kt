@@ -15,6 +15,7 @@ class PostsAdapter(
     private var posts: MutableList<Post>,
     private val onLikeClick: (Post, Int) -> Unit,
     private val onFavoriteClick: (Post, Int) -> Unit,
+    private val onCommentClick: (Post) -> Unit = {},
     private val onUserClick: (Int) -> Unit = {}
 ) : RecyclerView.Adapter<PostsAdapter.PostViewHolder>() {
 
@@ -27,6 +28,7 @@ class PostsAdapter(
         val postContent: TextView = view.findViewById(R.id.post_content)
         val postImage: ImageView = view.findViewById(R.id.post_image)
         val likeButton: Button = view.findViewById(R.id.btn_like)
+        val commentButton: Button = view.findViewById(R.id.btn_comment)
         val favoriteButton: Button = view.findViewById(R.id.btn_favorite)
         val likesCount: TextView = view.findViewById(R.id.likes_count)
     }
@@ -93,6 +95,10 @@ class PostsAdapter(
         // Click listeners
         holder.likeButton.setOnClickListener {
             onLikeClick(post, position)
+        }
+        
+        holder.commentButton.setOnClickListener {
+            onCommentClick(post)
         }
         
         holder.favoriteButton.setOnClickListener {

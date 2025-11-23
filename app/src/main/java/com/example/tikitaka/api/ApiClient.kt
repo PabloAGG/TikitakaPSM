@@ -9,7 +9,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    private const val BASE_URL = "http://10.0.2.2:3000/api/" // Para emulador Android
+    const val BASE_URL = "http://10.0.2.2:3000/api/" // Para emulador Android
     // Para dispositivo físico usar: "http://tu_ip_local:3000/api/"
     
     private var authToken: String? = null
