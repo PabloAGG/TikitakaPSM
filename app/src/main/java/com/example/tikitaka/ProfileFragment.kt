@@ -124,7 +124,10 @@ class ProfileFragment : Fragment() {
 
     private fun loadUserPosts() {
         val userId = preferencesManager.getUserId()
-        if (userId == -1) return
+        if (userId == -1) {
+            android.util.Log.w("ProfileFragment", "UserID inválido (-1), no se pueden cargar posts")
+            return
+        }
         
         progressBar?.visibility = View.VISIBLE
         
@@ -136,12 +139,20 @@ class ProfileFragment : Fragment() {
                     val posts = response.body()!!.posts
                     postsAdapter.updatePosts(posts)
                 } else {
-                    context?.let { 
-                        Utils.showToast(it, "Error cargando publicaciones", true)
+                    // Si hay error 500 o similar, simplemente mostrar lista vacía
+                    android.util.Log.w("ProfileFragment", "Error del servidor: ${response.code()} - ${response.body()?.message}")
+                    postsAdapter.updatePosts(emptyList())
+                    
+                    // Solo mostrar toast si no es error 500 (que probablemente significa que no hay posts)
+                    if (response.code() != 500) {
+                        context?.let { 
+                            Utils.showToast(it, "Error cargando publicaciones", true)
+                        }
                     }
                 }
             } catch (e: Exception) {
                 android.util.Log.e("ProfileFragment", "Error cargando posts de usuario", e)
+                postsAdapter.updatePosts(emptyList())
                 context?.let { 
                     Utils.showToast(it, "Error de conexión", true)
                 }

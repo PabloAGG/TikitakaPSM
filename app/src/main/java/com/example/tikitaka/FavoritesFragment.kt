@@ -20,10 +20,10 @@ import kotlinx.coroutines.launch
 
 class FavoritesFragment : Fragment() {
 
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
-    private lateinit var progressBar: ProgressBar
-    private lateinit var emptyStateText: TextView
+    private var recyclerView: RecyclerView? = null
+    private var swipeRefreshLayout: SwipeRefreshLayout? = null
+    private var progressBar: ProgressBar? = null
+    private var emptyStateText: TextView? = null
     
     private lateinit var postsAdapter: PostsAdapter
     private lateinit var postRepository: PostRepository
@@ -59,7 +59,7 @@ class FavoritesFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        recyclerView.layoutManager = LinearLayoutManager(context)
+        recyclerView?.layoutManager = LinearLayoutManager(context)
         
         postsAdapter = PostsAdapter(
             posts = mutableListOf(),
@@ -69,15 +69,15 @@ class FavoritesFragment : Fragment() {
             onUserClick = { userId -> /* Navegar a perfil */ }
         )
         
-        recyclerView.adapter = postsAdapter
+        recyclerView?.adapter = postsAdapter
     }
     
     private fun setupSwipeRefresh() {
-        swipeRefreshLayout.setOnRefreshListener {
+        swipeRefreshLayout?.setOnRefreshListener {
             loadFavorites()
         }
         
-        swipeRefreshLayout.setColorSchemeResources(
+        swipeRefreshLayout?.setColorSchemeResources(
             android.R.color.holo_blue_bright,
             android.R.color.holo_green_light,
             android.R.color.holo_orange_light
@@ -85,8 +85,8 @@ class FavoritesFragment : Fragment() {
     }
     
     private fun loadFavorites() {
-        if (!swipeRefreshLayout.isRefreshing) {
-            progressBar.visibility = View.VISIBLE
+        if (swipeRefreshLayout?.isRefreshing != true) {
+            progressBar?.visibility = View.VISIBLE
         }
         
         lifecycleScope.launch {
@@ -103,14 +103,23 @@ class FavoritesFragment : Fragment() {
                         postsAdapter.updatePosts(favorites)
                     }
                 } else {
-                    context?.let { 
-                        Utils.showToast(it, "Error cargando favoritos", true)
-                    }
-                    if (postsAdapter.itemCount == 0) {
+                    android.util.Log.w("FavoritesFragment", "Error del servidor: ${response.code()} - ${response.body()?.message}")
+                    
+                    // Si error 500, probablemente no hay favoritos, mostrar estado vacío
+                    if (response.code() == 500) {
                         showEmptyState()
+                        postsAdapter.updatePosts(emptyList())
+                    } else {
+                        context?.let { 
+                            Utils.showToast(it, "Error cargando favoritos", true)
+                        }
+                        if (postsAdapter.itemCount == 0) {
+                            showEmptyState()
+                        }
                     }
                 }
             } catch (e: Exception) {
+                android.util.Log.e("FavoritesFragment", "Excepción cargando favoritos", e)
                 context?.let { 
                     Utils.showToast(it, "Error de conexión", true)
                 }
@@ -118,8 +127,8 @@ class FavoritesFragment : Fragment() {
                     showEmptyState()
                 }
             } finally {
-                progressBar.visibility = View.GONE
-                swipeRefreshLayout.isRefreshing = false
+                progressBar?.visibility = View.GONE
+                swipeRefreshLayout?.isRefreshing = false
             }
         }
     }
@@ -174,14 +183,14 @@ class FavoritesFragment : Fragment() {
     }
     
     private fun showEmptyState() {
-        emptyStateText.visibility = View.VISIBLE
-        recyclerView.visibility = View.GONE
-        emptyStateText.text = "No tienes posts favoritos aún\n¡Guarda tus publicaciones favoritas!"
+        emptyStateText?.visibility = View.VISIBLE
+        recyclerView?.visibility = View.GONE
+        emptyStateText?.text = "No tienes posts favoritos aún\n¡Guarda tus publicaciones favoritas!"
     }
     
     private fun hideEmptyState() {
-        emptyStateText.visibility = View.GONE
-        recyclerView.visibility = View.VISIBLE
+        emptyStateText?.visibility = View.GONE
+        recyclerView?.visibility = View.VISIBLE
     }
     
     override fun onResume() {
