@@ -39,16 +39,23 @@ class FavoritesFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        postRepository = PostRepository.getInstance(requireContext())
-        
-        recyclerView = view.findViewById(R.id.recycler_view_favorites)
-        swipeRefreshLayout = view.findViewById(R.id.swipe_refresh_layout)
-        progressBar = view.findViewById(R.id.progress_bar)
-        emptyStateText = view.findViewById(R.id.empty_state_text)
-        
-        setupRecyclerView()
-        setupSwipeRefresh()
-        loadFavorites()
+        try {
+            postRepository = PostRepository.getInstance(requireContext())
+            
+            recyclerView = view.findViewById(R.id.recycler_view_favorites)
+            swipeRefreshLayout = view.findViewById(R.id.swipe_refresh_layout)
+            progressBar = view.findViewById(R.id.progress_bar)
+            emptyStateText = view.findViewById(R.id.empty_state_text)
+            
+            setupRecyclerView()
+            setupSwipeRefresh()
+            loadFavorites()
+        } catch (e: Exception) {
+            android.util.Log.e("FavoritesFragment", "Error en onViewCreated", e)
+            context?.let { 
+                Utils.showToast(it, "Error al inicializar favoritos: ${e.message}", true)
+            }
+        }
     }
 
     private fun setupRecyclerView() {
@@ -119,33 +126,49 @@ class FavoritesFragment : Fragment() {
     
     private fun handleLikeClick(post: Post, position: Int) {
         lifecycleScope.launch {
-            val result = postRepository.toggleLike(post.id, post.isLiked)
-            result.onSuccess { newLikeState ->
-                val updatedPost = post.copy(
-                    isLiked = newLikeState,
-                    likesCount = if (newLikeState) post.likesCount + 1 else post.likesCount - 1
-                )
-                postsAdapter.updatePost(position, updatedPost)
+            try {
+                val result = postRepository.toggleLike(post.id, post.isLiked)
+                result.onSuccess { newLikeState ->
+                    val updatedPost = post.copy(
+                        isLiked = newLikeState,
+                        likesCount = if (newLikeState) post.likesCount + 1 else post.likesCount - 1
+                    )
+                    postsAdapter.updatePost(position, updatedPost)
+                }.onFailure { exception ->
+                    android.util.Log.e("FavoritesFragment", "Error en like", exception)
+                    context?.let { Utils.showToast(it, "Error al dar like") }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("FavoritesFragment", "Excepción en handleLikeClick", e)
+                context?.let { Utils.showToast(it, "Error al dar like") }
             }
         }
     }
     
     private fun handleFavoriteClick(post: Post, position: Int) {
         lifecycleScope.launch {
-            val result = postRepository.toggleFavorite(post.id, post.isFavorited)
-            result.onSuccess { newFavoriteState ->
-                if (!newFavoriteState) {
-                    // Si se quitó de favoritos, remover de la lista
-                    postsAdapter.removePost(position)
-                    
-                    if (postsAdapter.itemCount == 0) {
-                        showEmptyState()
+            try {
+                val result = postRepository.toggleFavorite(post.id, post.isFavorited)
+                result.onSuccess { newFavoriteState ->
+                    if (!newFavoriteState) {
+                        // Si se quitó de favoritos, remover de la lista
+                        postsAdapter.removePost(position)
+                        
+                        if (postsAdapter.itemCount == 0) {
+                            showEmptyState()
+                        }
+                        
+                        context?.let { 
+                            Utils.showToast(it, "Post removido de favoritos")
+                        }
                     }
-                    
-                    context?.let { 
-                        Utils.showToast(it, "Post removido de favoritos")
-                    }
+                }.onFailure { exception ->
+                    android.util.Log.e("FavoritesFragment", "Error en favorito", exception)
+                    context?.let { Utils.showToast(it, "Error al remover favorito") }
                 }
+            } catch (e: Exception) {
+                android.util.Log.e("FavoritesFragment", "Excepción en handleFavoriteClick", e)
+                context?.let { Utils.showToast(it, "Error al remover favorito") }
             }
         }
     }

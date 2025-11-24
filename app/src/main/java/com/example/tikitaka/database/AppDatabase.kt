@@ -33,6 +33,7 @@ abstract class AppDatabase : RoomDatabase() {
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
+                android.util.Log.d("AppDatabase", "Base de datos inicializada correctamente")
                 instance
             }
         }

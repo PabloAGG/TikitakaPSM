@@ -46,16 +46,23 @@ class SearchFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        postRepository = PostRepository.getInstance(requireContext())
-        
-        searchEditText = view.findViewById(R.id.search_edit_text)
-        orderSpinner = view.findViewById(R.id.order_spinner)
-        recyclerView = view.findViewById(R.id.recycler_view_search_results)
-        progressBar = view.findViewById(R.id.progress_bar)
-        emptyStateText = view.findViewById(R.id.empty_state_text)
-        
-        setupViews()
-        setupRecyclerView()
+        try {
+            postRepository = PostRepository.getInstance(requireContext())
+            
+            searchEditText = view.findViewById(R.id.search_edit_text)
+            orderSpinner = view.findViewById(R.id.order_spinner)
+            recyclerView = view.findViewById(R.id.recycler_view_search_results)
+            progressBar = view.findViewById(R.id.progress_bar)
+            emptyStateText = view.findViewById(R.id.empty_state_text)
+            
+            setupViews()
+            setupRecyclerView()
+        } catch (e: Exception) {
+            android.util.Log.e("SearchFragment", "Error en onViewCreated", e)
+            context?.let { 
+                Utils.showToast(it, "Error al inicializar búsqueda: ${e.message}", true)
+            }
+        }
     }
 
     private fun setupViews() {
@@ -135,23 +142,39 @@ class SearchFragment : Fragment() {
     
     private fun handleLikeClick(post: Post, position: Int) {
         lifecycleScope.launch {
-            val result = postRepository.toggleLike(post.id, post.isLiked)
-            result.onSuccess { newLikeState ->
-                val updatedPost = post.copy(
-                    isLiked = newLikeState,
-                    likesCount = if (newLikeState) post.likesCount + 1 else post.likesCount - 1
-                )
-                postsAdapter.updatePost(position, updatedPost)
+            try {
+                val result = postRepository.toggleLike(post.id, post.isLiked)
+                result.onSuccess { newLikeState ->
+                    val updatedPost = post.copy(
+                        isLiked = newLikeState,
+                        likesCount = if (newLikeState) post.likesCount + 1 else post.likesCount - 1
+                    )
+                    postsAdapter.updatePost(position, updatedPost)
+                }.onFailure { exception ->
+                    android.util.Log.e("SearchFragment", "Error en like", exception)
+                    context?.let { Utils.showToast(it, "Error al dar like") }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("SearchFragment", "Excepción en handleLikeClick", e)
+                context?.let { Utils.showToast(it, "Error al dar like") }
             }
         }
     }
     
     private fun handleFavoriteClick(post: Post, position: Int) {
         lifecycleScope.launch {
-            val result = postRepository.toggleFavorite(post.id, post.isFavorited)
-            result.onSuccess { newFavoriteState ->
-                val updatedPost = post.copy(isFavorited = newFavoriteState)
-                postsAdapter.updatePost(position, updatedPost)
+            try {
+                val result = postRepository.toggleFavorite(post.id, post.isFavorited)
+                result.onSuccess { newFavoriteState ->
+                    val updatedPost = post.copy(isFavorited = newFavoriteState)
+                    postsAdapter.updatePost(position, updatedPost)
+                }.onFailure { exception ->
+                    android.util.Log.e("SearchFragment", "Error en favorito", exception)
+                    context?.let { Utils.showToast(it, "Error al guardar favorito") }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("SearchFragment", "Excepción en handleFavoriteClick", e)
+                context?.let { Utils.showToast(it, "Error al guardar favorito") }
             }
         }
     }

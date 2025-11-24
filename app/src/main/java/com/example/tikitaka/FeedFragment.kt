@@ -50,16 +50,23 @@ class FeedFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        postRepository = PostRepository.getInstance(requireContext())
-        
-        initViews(view)
-        setupRecyclerView()
-        setupSwipeRefresh()
-        setupFab()
-        setupSearchButton()
-        
-        loadPosts(refresh = true)
-        showOfflineIndicatorIfNeeded()
+        try {
+            postRepository = PostRepository.getInstance(requireContext())
+            
+            initViews(view)
+            setupRecyclerView()
+            setupSwipeRefresh()
+            setupFab()
+            setupSearchButton()
+            
+            loadPosts(refresh = true)
+            showOfflineIndicatorIfNeeded()
+        } catch (e: Exception) {
+            android.util.Log.e("FeedFragment", "Error en onViewCreated", e)
+            context?.let { 
+                Utils.showToast(it, "Error al inicializar: ${e.message}", true)
+            }
+        }
     }
 
     private fun initViews(view: View) {
@@ -172,6 +179,7 @@ class FeedFragment : Fragment() {
                     showOfflineIndicatorIfNeeded()
                     
                 }.onFailure { exception ->
+                    android.util.Log.e("FeedFragment", "Error cargando posts", exception)
                     context?.let { 
                         if (!NetworkUtils.isNetworkAvailable(it)) {
                             Utils.showToast(it, "Sin conexión - mostrando caché", true)
@@ -185,6 +193,7 @@ class FeedFragment : Fragment() {
                 }
                 
             } catch (e: Exception) {
+                android.util.Log.e("FeedFragment", "Excepción cargando posts", e)
                 context?.let { 
                     Utils.showToast(it, "Error: ${e.message}", true) 
                 }
@@ -201,46 +210,58 @@ class FeedFragment : Fragment() {
 
     private fun handleLikeClick(post: Post, position: Int) {
         lifecycleScope.launch {
-            // Usar repositorio con actualización optimista
-            val result = postRepository.toggleLike(post.id, post.isLiked)
-            
-            result.onSuccess { newLikeState ->
-                val updatedPost = post.copy(
-                    isLiked = newLikeState,
-                    likesCount = if (newLikeState) post.likesCount + 1 else post.likesCount - 1
-                )
-                postsAdapter.updatePost(position, updatedPost)
+            try {
+                // Usar repositorio con actualización optimista
+                val result = postRepository.toggleLike(post.id, post.isLiked)
                 
-                // Mostrar mensaje si estamos offline
-                if (!NetworkUtils.isNetworkAvailable(requireContext())) {
-                    Utils.showToast(requireContext(), "Like guardado localmente")
+                result.onSuccess { newLikeState ->
+                    val updatedPost = post.copy(
+                        isLiked = newLikeState,
+                        likesCount = if (newLikeState) post.likesCount + 1 else post.likesCount - 1
+                    )
+                    postsAdapter.updatePost(position, updatedPost)
+                    
+                    // Mostrar mensaje si estamos offline
+                    if (!NetworkUtils.isNetworkAvailable(requireContext())) {
+                        Utils.showToast(requireContext(), "Like guardado localmente")
+                    }
+                }.onFailure { exception ->
+                    android.util.Log.e("FeedFragment", "Error en like", exception)
+                    Utils.showToast(requireContext(), "Error: ${exception.message}")
                 }
-            }.onFailure { exception ->
-                Utils.showToast(requireContext(), "Error: ${exception.message}")
+            } catch (e: Exception) {
+                android.util.Log.e("FeedFragment", "Excepción en handleLikeClick", e)
+                Utils.showToast(requireContext(), "Error al dar like")
             }
         }
     }
 
     private fun handleFavoriteClick(post: Post, position: Int) {
         lifecycleScope.launch {
-            // Usar repositorio con actualización optimista
-            val result = postRepository.toggleFavorite(post.id, post.isFavorited)
-            
-            result.onSuccess { newFavoriteState ->
-                val updatedPost = post.copy(
-                    isFavorited = newFavoriteState
-                )
-                postsAdapter.updatePost(position, updatedPost)
+            try {
+                // Usar repositorio con actualización optimista
+                val result = postRepository.toggleFavorite(post.id, post.isFavorited)
                 
-                val message = if (newFavoriteState) "Post guardado" else "Post removido de favoritos"
-                Utils.showToast(requireContext(), message)
-                
-                // Mostrar mensaje si estamos offline
-                if (!NetworkUtils.isNetworkAvailable(requireContext())) {
-                    Utils.showToast(requireContext(), "Cambio guardado localmente")
+                result.onSuccess { newFavoriteState ->
+                    val updatedPost = post.copy(
+                        isFavorited = newFavoriteState
+                    )
+                    postsAdapter.updatePost(position, updatedPost)
+                    
+                    val message = if (newFavoriteState) "Post guardado" else "Post removido de favoritos"
+                    Utils.showToast(requireContext(), message)
+                    
+                    // Mostrar mensaje si estamos offline
+                    if (!NetworkUtils.isNetworkAvailable(requireContext())) {
+                        Utils.showToast(requireContext(), "Cambio guardado localmente")
+                    }
+                }.onFailure { exception ->
+                    android.util.Log.e("FeedFragment", "Error en favorito", exception)
+                    Utils.showToast(requireContext(), "Error: ${exception.message}")
                 }
-            }.onFailure { exception ->
-                Utils.showToast(requireContext(), "Error: ${exception.message}")
+            } catch (e: Exception) {
+                android.util.Log.e("FeedFragment", "Excepción en handleFavoriteClick", e)
+                Utils.showToast(requireContext(), "Error al guardar favorito")
             }
         }
     }

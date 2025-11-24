@@ -47,13 +47,20 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        preferencesManager = PreferencesManager(requireContext())
-        
-        initViews(view)
-        setupViews()
-        setupRecyclerView()
-        loadUserProfile()
-        loadUserPosts()
+        try {
+            preferencesManager = PreferencesManager(requireContext())
+            
+            initViews(view)
+            setupViews()
+            setupRecyclerView()
+            loadUserProfile()
+            loadUserPosts()
+        } catch (e: Exception) {
+            android.util.Log.e("ProfileFragment", "Error en onViewCreated", e)
+            context?.let { 
+                Utils.showToast(it, "Error al inicializar perfil: ${e.message}", true)
+            }
+        }
     }
 
     private fun initViews(view: View) {

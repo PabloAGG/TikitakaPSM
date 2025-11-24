@@ -33,8 +33,8 @@ interface PostDao {
     @Query("UPDATE cached_posts SET isLiked = :isLiked, likesCount = :likesCount WHERE id = :postId")
     suspend fun updateLikeStatus(postId: Int, isLiked: Boolean, likesCount: Int)
     
-    @Query("UPDATE cached_posts SET isFavorited = :isFavorited, favoritesCount = :favoritesCount WHERE id = :postId")
-    suspend fun updateFavoriteStatus(postId: Int, isFavorited: Boolean, favoritesCount: Int)
+    @Query("UPDATE cached_posts SET isFavorited = :isFavorited WHERE id = :postId")
+    suspend fun updateFavoriteStatus(postId: Int, isFavorited: Boolean)
     
     @Query("DELETE FROM cached_posts WHERE cachedAt < :timestamp")
     suspend fun deleteOldCache(timestamp: Long)

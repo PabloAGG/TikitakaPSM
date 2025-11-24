@@ -48,12 +48,24 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun setupNavigation() {
-        val navHostFragment = supportFragmentManager
-            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-        val navController = navHostFragment.navController
-        
-        val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
-        bottomNavigationView.setupWithNavController(navController)
+        try {
+            val navHostFragment = supportFragmentManager
+                .findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
+            
+            if (navHostFragment == null) {
+                android.util.Log.e("MainActivity", "NavHostFragment no encontrado")
+                Utils.showToast(this, "Error al inicializar navegación")
+                return
+            }
+            
+            val navController = navHostFragment.navController
+            
+            val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+            bottomNavigationView.setupWithNavController(navController)
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error en setupNavigation", e)
+            Utils.showToast(this, "Error al configurar navegación: ${e.message}")
+        }
     }
     
     private fun verifyTokenValidityAsync() {
@@ -78,6 +90,7 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 // Error de red, pero permitir continuar
                 // El usuario puede seguir usando la app offline
+                android.util.Log.e("MainActivity", "Error verificando token", e)
             }
         }
     }

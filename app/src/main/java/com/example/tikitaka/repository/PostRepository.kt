@@ -40,10 +40,12 @@ class PostRepository private constructor(context: Context) {
     suspend fun getPosts(page: Int, limit: Int = 10, forceRefresh: Boolean = false): Result<List<Post>> {
         return withContext(Dispatchers.IO) {
             try {
+                Log.d("PostRepository", "getPosts llamado: page=$page, limit=$limit, forceRefresh=$forceRefresh")
                 val offset = (page - 1) * limit
                 
                 // Si hay red y es refresh forzado, ir directo a red
                 if (forceRefresh && NetworkUtils.isNetworkAvailable(appContext)) {
+                    Log.d("PostRepository", "Refresh forzado con red disponible, obteniendo desde red")
                     return@withContext fetchFromNetworkAndCache(page, limit)
                 }
                 
@@ -57,8 +59,10 @@ class PostRepository private constructor(context: Context) {
                 
                 // Si no hay caché o es muy antiguo, intentar desde red
                 if (NetworkUtils.isNetworkAvailable(appContext)) {
+                    Log.d("PostRepository", "Caché vacío o antiguo, obteniendo desde red")
                     return@withContext fetchFromNetworkAndCache(page, limit)
                 } else {
+                    Log.d("PostRepository", "Sin conexión a red")
                     // Sin red y sin caché
                     if (cachedPosts.isEmpty()) {
                         return@withContext Result.failure(Exception("No hay conexión y no hay posts en caché"))
@@ -148,8 +152,7 @@ class PostRepository private constructor(context: Context) {
                 val cachedPost = postDao.getPostById(postId)
                 if (cachedPost != null) {
                     val newFavorited = !currentlyFavorited
-                    val newCount = if (newFavorited) cachedPost.favoritesCount + 1 else cachedPost.favoritesCount - 1
-                    postDao.updateFavoriteStatus(postId, newFavorited, newCount)
+                    postDao.updateFavoriteStatus(postId, newFavorited)
                 }
                 
                 // Intentar sincronizar con servidor
@@ -161,7 +164,7 @@ class PostRepository private constructor(context: Context) {
                     } else {
                         // Revertir cambio optimista si falla
                         cachedPost?.let {
-                            postDao.updateFavoriteStatus(postId, currentlyFavorited, it.favoritesCount)
+                            postDao.updateFavoriteStatus(postId, currentlyFavorited)
                         }
                         Result.failure(Exception(response.body()?.message ?: "Error"))
                     }
