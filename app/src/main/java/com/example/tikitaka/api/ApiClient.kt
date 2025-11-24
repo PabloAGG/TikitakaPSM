@@ -47,6 +47,8 @@ object ApiClient {
     
     private val gson = GsonBuilder()
         .setLenient()
+        .registerTypeAdapter(Boolean::class.java, BooleanTypeAdapter())
+        .registerTypeAdapter(Boolean::class.javaObjectType, BooleanTypeAdapter())
         .create()
     
     private val retrofit = Retrofit.Builder()
