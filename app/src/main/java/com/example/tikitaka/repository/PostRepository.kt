@@ -96,11 +96,13 @@ class PostRepository private constructor(context: Context) {
                 Log.d("PostRepository", "Guardados ${entities.size} posts en caché desde red")
                 Result.success(posts)
             } else {
-                Result.failure(Exception(response.body()?.message ?: "Error desconocido"))
+                val errorMsg = response.body()?.message ?: "Error del servidor (${response.code()})"
+                Log.e("PostRepository", "Error en respuesta: $errorMsg")
+                Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
-            Log.e("PostRepository", "Error desde red", e)
-            Result.failure(e)
+            Log.e("PostRepository", "Error desde red: ${e.message}", e)
+            Result.failure(Exception("Error de conexión: ${e.message ?: e.javaClass.simpleName}"))
         }
     }
     

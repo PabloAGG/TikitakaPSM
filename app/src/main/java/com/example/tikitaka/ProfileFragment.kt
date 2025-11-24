@@ -31,7 +31,7 @@ class ProfileFragment : Fragment() {
     private lateinit var modifyDataOption: TextView
     private lateinit var recyclerViewPosts: RecyclerView
     private lateinit var logoutButton: Button
-    private lateinit var progressBar: ProgressBar
+    private var progressBar: ProgressBar? = null
     
     private lateinit var preferencesManager: PreferencesManager
     private lateinit var postsAdapter: PostsAdapter
@@ -126,7 +126,7 @@ class ProfileFragment : Fragment() {
         val userId = preferencesManager.getUserId()
         if (userId == -1) return
         
-        progressBar.visibility = View.VISIBLE
+        progressBar?.visibility = View.VISIBLE
         
         lifecycleScope.launch {
             try {
@@ -141,11 +141,12 @@ class ProfileFragment : Fragment() {
                     }
                 }
             } catch (e: Exception) {
+                android.util.Log.e("ProfileFragment", "Error cargando posts de usuario", e)
                 context?.let { 
                     Utils.showToast(it, "Error de conexión", true)
                 }
             } finally {
-                progressBar.visibility = View.GONE
+                progressBar?.visibility = View.GONE
             }
         }
     }
