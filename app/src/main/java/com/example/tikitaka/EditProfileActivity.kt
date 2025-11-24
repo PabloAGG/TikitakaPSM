@@ -46,7 +46,7 @@ class EditProfileActivity : AppCompatActivity() {
     private lateinit var teamSpinner: Spinner
     private lateinit var changePasswordSwitch: MaterialSwitch
     private lateinit var saveButton: Button
-    private lateinit var progressBar: ProgressBar
+    private var progressBar: ProgressBar? = null
     
     private lateinit var preferencesManager: PreferencesManager
     private var teams: List<Team> = emptyList()
@@ -252,7 +252,7 @@ class EditProfileActivity : AppCompatActivity() {
             teams[selectedTeamPosition]
         } else null
         
-        progressBar.visibility = View.VISIBLE
+        progressBar?.visibility = View.VISIBLE
         saveButton.isEnabled = false
         
         lifecycleScope.launch {
@@ -283,7 +283,7 @@ class EditProfileActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Utils.showToast(this@EditProfileActivity, "Error al actualizar: ${e.message}", true)
             } finally {
-                progressBar.visibility = View.GONE
+                progressBar?.visibility = View.GONE
                 saveButton.isEnabled = true
             }
         }
